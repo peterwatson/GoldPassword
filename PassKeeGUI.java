@@ -18,6 +18,11 @@ public class PassKeeGUI extends JFrame {
 	
 	private JMenuItem newDatabaseItem;
 	private JMenuItem newEntryItem;
+	private JTextField textField;
+	private JTextField textField_1;
+	private JButton button;
+	private JLabel lblNewLabel;
+	private JLabel label;
 
 
 	
@@ -58,6 +63,8 @@ public class PassKeeGUI extends JFrame {
 		
 		newEntryItem = new JMenuItem("Create New Entry");//Menu Item
 		mnNewMenu.add(newEntryItem);
+		
+
 		
 		
 		
