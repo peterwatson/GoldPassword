@@ -1,14 +1,14 @@
 package PassKee;
 
-import java.awt.*;
-import javax.swing.*;
-import com.jgoodies.*;
-import java.awt.EventQueue;
 
+import javax.swing.*;
+
+import java.sql.*;
 import javax.swing.JFrame;
 
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.LayoutStyle.ComponentPlacement;
+
 public class PasswordGeneratorPanel extends JFrame
 {
 	private JMenuItem newDatabaseItem;
