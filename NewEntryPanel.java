@@ -4,25 +4,33 @@ import java.awt.*;
 import javax.swing.*;
 import com.jgoodies.*;
 import java.awt.EventQueue;
+import java.sql.*;
 
 import javax.swing.JFrame;
 import java.awt.event.*;
+
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.LayoutStyle.ComponentPlacement;
 
-public class NewEntryPanel extends JFrame
+public class NewEntryPanel extends JFrame implements ActionListener
 {
-	private JTextField firstNameTextField;
-	private JTextField secondNameTextField;
+	private JTextField UrlTextField;
+	private JTextField websiteTextField;
 	private JTextField passwordTextField;
 	private JTextField passwordRepeatTextField;
-	private JLabel firstNameLabel;
-	private JLabel secondNameLabel;
+	private JLabel UrlLabel;
+	private JLabel websiteLabel;
 	private JLabel passwordLabel;
 	private JLabel repeatPasswordLabel;
 	private JButton generatePasswordButton;
-	
-	
+	private String firstPassword;
+	private String secondPassword;
+	private String url;
+	private String website;
+	private Statement statement;
+	private Connection connection;
+	private ResultSet results;
+	private JMenuItem saveDatabase;
 	
 	public NewEntryPanel()
 	{
@@ -36,15 +44,15 @@ public class NewEntryPanel extends JFrame
 		menuBar.add(mnNewMenu);//Add menu
 		
 		
-		JMenuItem mntmOpenDatabase = new JMenuItem("Save Entry");//Menu Item
-		mnNewMenu.add(mntmOpenDatabase);
+		saveDatabase = new JMenuItem("Save Entry");//Menu Item
+		mnNewMenu.add(saveDatabase);
 		
 		
-		firstNameTextField = new JTextField();
-		firstNameTextField.setColumns(10);
+		UrlTextField = new JTextField();
+		UrlTextField.setColumns(10);
 		
-		secondNameTextField = new JTextField();
-		secondNameTextField.setColumns(10);
+		websiteTextField = new JTextField();
+		websiteTextField.setColumns(10);
 		
 		passwordTextField = new JPasswordField();
 		
@@ -52,9 +60,9 @@ public class NewEntryPanel extends JFrame
 		
 		generatePasswordButton = new JButton("Generate");
 		
-		firstNameLabel = new JLabel("First Name");
+		UrlLabel = new JLabel("URL");
 		
-		secondNameLabel = new JLabel("Last Name");
+		websiteLabel = new JLabel("Site Name");
 		
 		passwordLabel = new JLabel("Password");
 		
@@ -65,16 +73,16 @@ public class NewEntryPanel extends JFrame
 				.addGroup(groupLayout.createSequentialGroup()
 					.addGap(17)
 					.addGroup(groupLayout.createParallelGroup(Alignment.TRAILING)
-						.addComponent(firstNameLabel)
-						.addComponent(secondNameLabel)
+						.addComponent(UrlLabel)
+						.addComponent(websiteLabel)
 						.addComponent(passwordLabel)
 						.addComponent(repeatPasswordLabel))
 					.addPreferredGap(ComponentPlacement.UNRELATED)
 					.addGroup(groupLayout.createParallelGroup(Alignment.LEADING, false)
 						.addComponent(passwordRepeatTextField, Alignment.TRAILING)
 						.addComponent(passwordTextField, Alignment.TRAILING)
-						.addComponent(secondNameTextField, Alignment.TRAILING)
-						.addComponent(firstNameTextField, Alignment.TRAILING))
+						.addComponent(websiteTextField, Alignment.TRAILING)
+						.addComponent(UrlTextField, Alignment.TRAILING))
 					.addGap(43)
 					.addComponent(generatePasswordButton)
 					.addContainerGap(70, Short.MAX_VALUE))
@@ -87,12 +95,12 @@ public class NewEntryPanel extends JFrame
 						.addComponent(generatePasswordButton)
 						.addGroup(groupLayout.createSequentialGroup()
 							.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
-								.addComponent(firstNameTextField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-								.addComponent(firstNameLabel))
+								.addComponent(UrlTextField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+								.addComponent(UrlLabel))
 							.addGap(18)
 							.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
-								.addComponent(secondNameTextField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-								.addComponent(secondNameLabel))
+								.addComponent(websiteTextField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+								.addComponent(websiteLabel))
 							.addGap(18)
 							.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
 								.addComponent(passwordTextField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
@@ -105,8 +113,51 @@ public class NewEntryPanel extends JFrame
 		);
 		getContentPane().setLayout(groupLayout);
 		
+		saveDatabase.addActionListener(this);
+		
 		generateButtonGo();
 		
+	}
+	
+	public void setFirstPassword()
+	{ firstPassword = passwordTextField.getText(); }
+	
+	public void setSecondPassword()
+	{ secondPassword = websiteTextField.getText(); }
+	
+	public String getFirstPassword()
+	{ return firstPassword; }
+	
+	public String getSecondPassword()
+	{ return secondPassword; }
+	
+	public void setUrl()
+	{ url = UrlTextField.getText(); }
+	
+	public String getUrl()
+	{ return url; }
+	
+	public void setWebsiteName()
+	{ website = websiteTextField.getText(); }
+	
+	public String getWebsiteName()
+	{ return website; }
+	
+	public void updateDatabase()
+	{
+		try
+		{
+			statement = connection.createStatement();
+			statement.executeUpdate("CREATE TABLE IF NOT EXISTS data (id string, name string, password string)");
+			statement.executeUpdate("insert into data values('"+getUrl()+"', '"+getWebsiteName()+"', '"+getFirstPassword()+"')");
+			results = statement.executeQuery("SELECT * FROM data");
+		}
+		catch(SQLException sqlEx)
+	    {
+	    	System.out.println("***Unnable to execute query***");
+	    	sqlEx.printStackTrace();
+	    	System.exit(1);
+	    }
 	}
 	
 	public void generateButtonGo()
@@ -118,6 +169,74 @@ public class NewEntryPanel extends JFrame
 				passGen.setVisible(true);
 			}
 		});
+	}
+	public void printDetails()
+	{
+		try
+	    {
+	    	System.out.println();
+	    	
+	    	while(results.next())
+	    	{
+	    		System.out.println("URL: "
+	    							+ results.getString(1));
+	    		System.out.println("Site Name: "
+	    							+results.getString(2));
+	    		System.out.println("Password: "
+	    							+results.getString(3));
+	    	}
+	    }
+	    catch(SQLException sqlEx)
+	    {
+	    	System.out.println("***Error retrieving data***");
+	    	sqlEx.printStackTrace();
+	    	System.exit(1);
+	    }
+		try
+	    {
+	    	connection.close();
+	    }
+	    catch(SQLException sqlEx)
+	    {
+	    	System.out.println("***Unnable to disconnect***");
+	    	sqlEx.printStackTrace();
+	    	System.exit(1);
+	    }
+	}
+
+	public void databaseConnection()
+	{//Method start
+		 try
+		    {
+		    Class.forName("org.sqlite.JDBC");
+		    // create a database connection
+		    connection = DriverManager.getConnection("jdbc:sqlite:user.db");
+		    }
+		    catch(ClassNotFoundException cnfEx)
+		    {
+		    	System.out.println("***Unnable to load driver***");
+		    	System.exit(1);
+		    }
+		    catch(SQLException sqlEx)
+		    {
+		    	System.out.println("***Cannot connect to database***");
+		    	System.exit(1);
+		    }
+	}//Method end
+	
+	public void actionPerformed(ActionEvent e) 
+	{
+		if(e.getSource() == saveDatabase)
+		{
+			setUrl();
+			getWebsiteName();
+			setFirstPassword();
+			
+			databaseConnection();
+			updateDatabase();
+			printDetails();
+		}
+		
 	}
 
 }
