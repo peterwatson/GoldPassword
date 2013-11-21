@@ -1,13 +1,24 @@
 package PassKee;
 
 import java.awt.*;
+
+import javax.crypto.Cipher;
+import javax.crypto.CipherOutputStream;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.SecretKeySpec;
 import javax.swing.*;
 import com.jgoodies.*;
 import java.awt.EventQueue;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.sql.*;
 
 import javax.swing.JFrame;
 import java.awt.event.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.LayoutStyle.ComponentPlacement;
@@ -32,10 +43,21 @@ public class NewEntryPanel extends JFrame implements ActionListener
 	private ResultSet results;
 	private JMenuItem saveDatabase;
 	
+	private FileInputStream input;
+	private FileOutputStream output;
+	private File file = new File("user.db");
+	private SecretKeySpec key;
+	private Cipher encrypt;
+	private CipherOutputStream cipherOut;
+	
+	private NewDatabasePanel newDatabasePanel = new NewDatabasePanel();
+	
 	public NewEntryPanel()
 	{
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 450, 300);
+		
+		setAlwaysOnTop(true);
 		
 		JMenuBar menuBar = new JMenuBar();//Menu bar
 		setJMenuBar(menuBar);//Set menu bar
@@ -123,7 +145,13 @@ public class NewEntryPanel extends JFrame implements ActionListener
 	{ firstPassword = passwordTextField.getText(); }
 	
 	public void setSecondPassword()
-	{ secondPassword = websiteTextField.getText(); }
+	{ secondPassword = passwordRepeatTextField.getText(); }
+	
+	public void setWebsiteName()
+	{ website = websiteTextField.getText(); }
+	
+	public void setUrl()
+	{ url = UrlTextField.getText(); }
 	
 	public String getFirstPassword()
 	{ return firstPassword; }
@@ -131,14 +159,8 @@ public class NewEntryPanel extends JFrame implements ActionListener
 	public String getSecondPassword()
 	{ return secondPassword; }
 	
-	public void setUrl()
-	{ url = UrlTextField.getText(); }
-	
 	public String getUrl()
 	{ return url; }
-	
-	public void setWebsiteName()
-	{ website = websiteTextField.getText(); }
 	
 	public String getWebsiteName()
 	{ return website; }
@@ -224,17 +246,62 @@ public class NewEntryPanel extends JFrame implements ActionListener
 		    }
 	}//Method end
 	
+	public void encryptDatabase()
+	{
+		try
+		{
+			input = new FileInputStream(file);
+			file = new File(file.getAbsolutePath()+".enc");
+			output = new FileOutputStream(file);
+			
+			byte k[] = NewDatabasePanel.masterPassword.get(0).getBytes();//kEY
+			key = new SecretKeySpec(k,algorithm().split("/")[0]);
+			
+			encrypt = Cipher.getInstance(algorithm());
+			encrypt.init(Cipher.ENCRYPT_MODE,key);
+			cipherOut = new CipherOutputStream(output, encrypt);
+			
+			byte[] buf = new byte[1024];
+			int read;
+			
+			while((read = input.read(buf))!=-1)
+				cipherOut.write(buf, 0, read);
+			input.close();
+			cipherOut.flush();
+			cipherOut.close();
+		
+		}
+		catch( NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IOException fnfex)
+		{
+			fnfex.printStackTrace();
+		}
+	}
+	
+	public String algorithm()
+	{
+		return "DES/ECB/PKCS5Padding";
+	}
+	
+	public void deleteDatabase()//Delete old database
+	{
+		File file = new File("user.db");
+		file.delete();
+	}//End method
+	
 	public void actionPerformed(ActionEvent e) 
 	{
 		if(e.getSource() == saveDatabase)
 		{
-			setUrl();
-			getWebsiteName();
-			setFirstPassword();
+			setUrl();//Run set URL method
+			setWebsiteName();//Run set web site name method
+			setFirstPassword();//Run set password method
 			
-			databaseConnection();
-			updateDatabase();
-			printDetails();
+			databaseConnection();//Run database connection method
+			updateDatabase();//Run update database method
+			encryptDatabase();//Run encrypt database method
+			deleteDatabase();//Run delete database method
+			//printDetails();
+			System.out.println(NewDatabasePanel.masterPassword.get(0));
 		}
 		
 	}
