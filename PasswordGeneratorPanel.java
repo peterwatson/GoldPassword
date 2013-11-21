@@ -1,6 +1,3 @@
-package PassKee;
-
-
 import javax.swing.*;
 
 import java.sql.*;
@@ -25,6 +22,8 @@ public class PasswordGeneratorPanel extends JFrame
 		
 	setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	setBounds(100, 100, 450, 300);
+	
+	setAlwaysOnTop(true);
 	
 	JMenuBar menuBar = new JMenuBar();//Menu bar
 	setJMenuBar(menuBar);//Set menu bar
