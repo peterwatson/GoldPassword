@@ -1,8 +1,15 @@
 package PassKee;
 
 import java.awt.*;
+
+import javax.crypto.Cipher;
+import javax.crypto.CipherOutputStream;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.SecretKeySpec;
 import javax.swing.*;
 
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.sql.*;
 
 import javax.swing.JFrame;
@@ -10,8 +17,8 @@ import javax.swing.GroupLayout.Alignment;
 import javax.swing.LayoutStyle.ComponentPlacement;
 
 import java.awt.event.*;
-
-
+import java.io.*;
+import java.util.*;
 
 public class NewDatabasePanel extends JFrame implements ActionListener
 {
@@ -24,14 +31,18 @@ public class NewDatabasePanel extends JFrame implements ActionListener
 	private String firstPassword;
 	private String secondPassword;
 	private Connection connection;
-	
+	public static ArrayList<String> masterPassword = new ArrayList<>();
 	private JOptionPane optionPaneErrorMessage;
 	private JOptionPane optionPaneSuccessMessage;
+	private Statement statement;
+	private ResultSet results;
 	
 	public NewDatabasePanel()//Constructor
 	{
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 450, 300);
+		
+		setAlwaysOnTop(true);
 		
 		JMenuBar menuBar = new JMenuBar();//Menu bar
 		setJMenuBar(menuBar);//Set menu bar
@@ -52,6 +63,7 @@ public class NewDatabasePanel extends JFrame implements ActionListener
 		lblNewLabel = new JLabel("Password");
 		
 		label = new JLabel("Repeat");
+		
 		GroupLayout groupLayout = new GroupLayout(getContentPane());
 		groupLayout.setHorizontalGroup(
 			groupLayout.createParallelGroup(Alignment.LEADING)
@@ -110,7 +122,7 @@ public class NewDatabasePanel extends JFrame implements ActionListener
 	public void checkPasswordsMatch()
 	{//Method start
 		
-		if(getFirstPassword().equals(getSecondPassword()))//Check if passwords match
+		if(getFirstPassword().equals(getSecondPassword()) && getFirstPassword().length() <= 8)//Check if passwords match
 		{
 			databaseConnection();//If true create and connect to database
 			showSuccessOptionPane();
@@ -141,6 +153,9 @@ public class NewDatabasePanel extends JFrame implements ActionListener
 		    	System.out.println("***Cannot connect to database***");
 		    	System.exit(1);
 		    }
+		
+		 
+		 
 	}//Method end
 
 	//public void executeQuery()
@@ -155,9 +170,23 @@ public class NewDatabasePanel extends JFrame implements ActionListener
 			
 			checkPasswordsMatch();
 			
+			masterPassword.add(getFirstPassword());
 			
+			masterPaswwordDatabaseConnection();
+			
+			updateDatabase();
+			//System.out.println(masterPassword.get(0));
 		}
-		
+	}
+	
+	public String getNext(int index)
+	{
+		return masterPassword.get(index);
+	}
+	
+	public void setMasterPassword(String element)
+	{
+		masterPassword.add(element);
 	}
 	
 	public void showErrorOptionPane()
@@ -176,6 +205,47 @@ public class NewDatabasePanel extends JFrame implements ActionListener
 		dialog.setVisible(true);
 	
 	}
+
+	public void masterPaswwordDatabaseConnection()
+	{//Method start
+		 try
+		    {
+		    Class.forName("org.sqlite.JDBC");
+		    // create a database connection
+		    connection = DriverManager.getConnection("jdbc:sqlite:/opt/master.db");
+		    }
+		    catch(ClassNotFoundException cnfEx)
+		    {
+		    	System.out.println("***Unnable to load driver***");
+		    	System.exit(1);
+		    }
+		    catch(SQLException sqlEx)
+		    {
+		    	System.out.println("***Cannot connect to database***");
+		    	System.exit(1);
+		    }
+		
+		 
+		 
+	}//Method end
+	
+	public void updateDatabase()
+	{
+		try
+		{
+			statement = connection.createStatement();
+			statement.executeUpdate("CREATE TABLE IF NOT EXISTS master (password string)");
+			statement.executeUpdate("insert into master values('"+masterPassword.get(0)+"')");
+			results = statement.executeQuery("SELECT * FROM master");
+		}
+		catch(SQLException sqlEx)
+	    {
+	    	System.out.println("***Unnable to execute query***");
+	    	sqlEx.printStackTrace();
+	    	System.exit(1);
+	    }
+	}
 	
 }
+
 
