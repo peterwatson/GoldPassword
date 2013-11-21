@@ -2,6 +2,7 @@ package PassKee;
 
 
 import javax.swing.*;
+
 import java.awt.EventQueue;
 import javax.swing.JFrame;
 import java.awt.event.*;
@@ -14,16 +15,13 @@ import javax.swing.LayoutStyle.ComponentPlacement;
 public class PassKeeGUI extends JFrame {
 
 	
-	JPasswordField jp = new JPasswordField(24);
+	
 	
 	private JMenuItem newDatabaseItem;
 	private JMenuItem newEntryItem;
-	private JTextField textField;
-	private JTextField textField_1;
-	private JButton button;
-	private JLabel lblNewLabel;
-	private JLabel label;
-
+	private JMenuItem viewDatabaseItem;
+	private databaseLogin login = new databaseLogin();
+	
 
 	
 	/**
@@ -48,7 +46,6 @@ public class PassKeeGUI extends JFrame {
 	 */
 	public PassKeeGUI() {
 		
-
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 450, 300);
 		
@@ -65,14 +62,21 @@ public class PassKeeGUI extends JFrame {
 		mnNewMenu.add(newEntryItem);
 		
 
+		viewDatabaseItem = new JMenuItem("View Database");
+		mnNewMenu.add(viewDatabaseItem);
 		
-		
-		
+
+	
 		
 	
 		NewEntryPanelShow();
 		
 		NewDatabasePanelShow();
+		
+		databaseLoginShow();
+		
+		//viewDatabasePanelShow();
+		
 		
 	}
 	
@@ -85,6 +89,7 @@ public class PassKeeGUI extends JFrame {
             	
             	NewDatabasePanel newDatabase = new NewDatabasePanel();
             	newDatabase.setVisible(true);
+            
             		
 
             }
@@ -96,8 +101,6 @@ public class PassKeeGUI extends JFrame {
 		newEntryItem.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent ae) {
             	
-            		//databaseName = JOptionPane.showInputDialog( "Enter a database name" );//Open dialogue
-            	
             	NewEntryPanel newEntry = new NewEntryPanel();
             	newEntry.setVisible(true);
             		
@@ -105,4 +108,36 @@ public class PassKeeGUI extends JFrame {
             }
         });
 	}
+	/*
+	public void viewDatabasePanelShow()
+	{
+		viewDatabaseItem.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent ae) {
+				
+				
+				
+				ViewDatabasePanel viewDatabasePanel = new ViewDatabasePanel();
+				viewDatabasePanel.setVisible(true);
+				
+				
+				
+			}
+		
+	});
+}
+*/
+	public void databaseLoginShow()
+	{
+		viewDatabaseItem.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent ae) {
+			
+				
+				login.setVisible(true);
+				
+				
+			}
+		
+	});
+}
+	
 }
