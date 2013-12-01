@@ -50,14 +50,15 @@ public class NewEntryPanel extends JFrame implements ActionListener
 	private SecretKeySpec key;//Secret key instance variable
 	private Cipher encrypt;//Encryption instance variable
 	private CipherOutputStream cipherOut;//Cipher output stream instance variable
-
-	private final int SIZE = 26;//Size of alphabet
+	private JOptionPane optionPaneSuccessMessage;
+	
+	private final int size = 26;//Size of the alphabet
 	private char[] alphabet =//Store alphabet in char array
 		{ 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
 				'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z' };
 
-	private char[] encryption = new char[SIZE];//Set encryption array to size of alphabet
-	private char[] decryption = new char[SIZE];//Set decryption array to size of alphabet
+	private char[] encryption = new char[size];//Set encryption array to size of alphabet
+	private char[] decryption = new char[size];//Set decryption array to size of alphabet
 
 	
 	public NewEntryPanel()
@@ -195,13 +196,23 @@ public class NewEntryPanel extends JFrame implements ActionListener
 	public void updateDatabase()
 		{//Method start
 			
+			Connection conn = null;
+			PreparedStatement pstmt = null;
+			
 			try
 				{//Start try
+					conn = getDatabaseConnection();//Connect to the database
 					
 					statement = connection.createStatement();//Create SQL statement object
-					statement.executeUpdate("CREATE TABLE IF NOT EXISTS data (URL string, Site string, Password string)");//Create table
-					statement.executeUpdate("INSERT INTO DATA VALUES('"+getUrl()+"','"+getWebsiteName()+
-																				"','"+ getFirstPassword()+"')");//Insert data into tables
+					statement.executeUpdate("CREATE TABLE IF NOT EXISTS DATA (URL string, Site string, Password string)");//Create table
+					
+					String query = "INSERT INTO DATA (URL, Site, Password) VALUES(?, ?, ?)";//Prepared query
+					pstmt = connection.prepareStatement(query);//Create prepared statement object
+					pstmt.setString(1, getUrl());//Set designated parameters
+					pstmt.setString(2, getWebsiteName());
+					pstmt.setString(3, getFirstPassword());
+					pstmt.executeUpdate();
+					
 					results = statement.executeQuery("SELECT * FROM data");//Retrieve all input and add to results
 					
 				}//End try
@@ -216,9 +227,29 @@ public class NewEntryPanel extends JFrame implements ActionListener
 					
 				}//End catch
 			
+			finally
+			{//Start finally
+				 try
+					{//Start try
+						
+						pstmt.close();//Close prepared statement
+						conn.close();//Close connection
+					}
+				 
+				catch (SQLException e)
+					
+					{//Start catch
+						
+						e.printStackTrace();
+						System.out.println("Could not disconnect!");//Print error
+						System.exit(1);
+					
+					}//End catch
+			     
+			}//End finally
 		}//Method end
 	
-	public void databaseConnection()
+	public Connection getDatabaseConnection()
 		{// Method start
 			try
 				{//Start try
@@ -244,6 +275,8 @@ public class NewEntryPanel extends JFrame implements ActionListener
 					
 				}//End catch
 			
+			return connection;
+			
 		}// Method end
 
 	public void encryptDatabase()
@@ -261,11 +294,11 @@ public class NewEntryPanel extends JFrame implements ActionListener
 					encrypt = Cipher.getInstance(algorithm());//Implements transformation algorithm for encryption
 					encrypt.init(Cipher.ENCRYPT_MODE, key);//Initialise cipher with key
 					cipherOut = new CipherOutputStream(output, encrypt);//New cipher input object
-					byte[] buf = new byte[1024];//New byte array object
+					byte[] buffer = new byte[1024];//New byte array object
 					int read;//Initialise read integer
 
-					while ((read = input.read(buf)) != -1)//Run the length of the buffer
-						cipherOut.write(buf, 0, read);
+					while ((read = input.read(buffer)) != -1)//Run the length of the buffer
+						cipherOut.write(buffer, 0, read);
 					input.close();//Close input stream
 					cipherOut.flush();//Flush cipher stream
 					cipherOut.close();//Close cipher stream
@@ -302,12 +335,15 @@ public class NewEntryPanel extends JFrame implements ActionListener
 					setWebsiteName();// Run set web site name method
 					setFirstPassword();// Run set password method
 
-					databaseConnection();// Run database connection method
+					//databaseConnection();// Run database connection method
 					updateDatabase();// Run update database method
 					encryptDatabase();// Run encrypt database method
 					deleteDatabase();// Run delete database method
 				
-					System.out.println(NewDatabasePanel.masterPassword.get(0));//Print password for reference
+					optionPaneSuccessMessage = new JOptionPane("New entry added!",JOptionPane.INFORMATION_MESSAGE);
+					JDialog dialog = optionPaneSuccessMessage.createDialog("Success");
+					dialog.setAlwaysOnTop(true);//Set option pane always on top
+					dialog.setVisible(true);//Set option pane visible
 
 					MainPanel.newEntryPanelClose();//Close panel
 					
@@ -321,15 +357,15 @@ public class NewEntryPanel extends JFrame implements ActionListener
 					System.out.println("Decryption order = " + new String(decryption));//Print decryption for reference
 					String text = "GREGS_CEASER_CYPHER_EXAMPLE";//String to be encrypted
 
-					System.out.println(text);//Print secret to be encrypted
+					System.out.println("Plain text: "+text);//Print secret to be encrypted
 					text = encryption(text);//Encrypt text
 					
 					passwordTextField.setText(text);//Add generated cipher text to first text field
 					passwordRepeatTextField.setText(text);//Add generated cipher text to second text field
 
-					System.out.println(text);//Print encrypted cipher text
+					System.out.println("Cipher text: "+text);//Print encrypted cipher text
 					text = decryption(text);//Decrypt cipher text
-					System.out.println(text);//Print decrypted text for reference
+					System.out.println("Plain tex: "+text);//Print decrypted text for reference
 
 				}//End if
 
@@ -338,31 +374,29 @@ public class NewEntryPanel extends JFrame implements ActionListener
 	public void ceaserEncryption()
 		{
 
-			for (int i = 0; i < SIZE; i++)
-				encryption[i] = alphabet[(i + 3) % SIZE];//Shift letters by 3 places
-			for (int i = 0; i < SIZE; i++)
+			for (int i = 0; i < size; i++)
+				encryption[i] = alphabet[(i + 3) % size];//Shift letters by 3 places
+			for (int i = 0; i < size; i++)
 				decryption[encryption[i] - 'A'] = alphabet[i];//Reverse shift for decryption
 
 		}
 
 	// Encryption
-	public String encryption(String secret)
+	public String encryption(String plainText)
 		{
-			char[] message = secret.toCharArray();//Array for message
-			for (int i = 0; i < message.length; i++)//Loop for encryption
-				if (Character.isUpperCase(message[i]))//If true there is a letter to be changed
-					message[i] = encryption[message[i] - 'A'];//Use the letter as index
-			return new String(message);//Return message as new string object
+			char[] cipher = plainText.toCharArray();//Array for plain text
+			for (int i = 0; i < cipher.length; i++)//Loop for encryption
+				if (Character.isUpperCase(cipher[i]))//If true there is a letter to be changed
+					cipher[i] = encryption[cipher[i] - 'A'];//Use the letter as index
+			return new String(cipher);//Return message as new string object
 		}
 
-	public String decryption(String secret)
+	public String decryption(String cipherText)
 		{
-			char[] cipher = secret.toCharArray();//The cipher text array
-			for (int i = 0; i < cipher.length; i++)//Loop for decryption
-				if (Character.isUpperCase(cipher[i]))//If true there is letter to be changed
-					cipher[i] = decryption[cipher[i] - 'A'];//Use the letter as index
-			return new String(cipher);//Return cipher as new string
+			char[] plainText = cipherText.toCharArray();//The cipher text array
+			for (int i = 0; i < plainText.length; i++)//Loop for decryption
+				if (Character.isUpperCase(plainText[i]))//If true there is letter to be changed
+					plainText[i] = decryption[plainText[i] - 'A'];//Use the letter as index
+			return new String(plainText);//Return cipher as new string
 		}
 }//Class end
-
-
